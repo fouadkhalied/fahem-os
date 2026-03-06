@@ -4,7 +4,8 @@ export enum UserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   TEACHER = 'TEACHER',
-  STUDENT = 'STUDENT'
+  STUDENT = 'STUDENT',
+  PARENT = 'PARENT'
 }
 
 export enum Language {
@@ -65,6 +66,49 @@ export interface ReportCard {
   issueDate: string;
   gradeAverage: string | number;
   type: 'Report Card' | 'Certificate' | 'Transcript';
+  status?: 'Draft' | 'Released';
+  term?: string;
+  attendance?: {
+    totalDays: number;
+    absences: number;
+    tardies: number;
+  };
+  behavioralComments?: string;
+  nextSteps?: string;
+  subjectGrades?: {
+    subject: string;
+    grade: string;
+    score: number;
+    trend: 'up' | 'down' | 'stable';
+    teacher: string;
+    teacherAvatar: string;
+    breakdown: { category: string; score: number }[];
+  }[];
+  skills?: { category: string; score: number }[];
+}
+
+export interface TranscriptCourse {
+  code: string;
+  title: string;
+  credits: number;
+  grade: string;
+  points: number;
+}
+
+export interface TranscriptYear {
+  year: string;
+  gradeLevel: string;
+  courses: TranscriptCourse[];
+}
+
+export interface TranscriptData {
+  years: TranscriptYear[];
+  totalCreditsEarned: number;
+  requiredCredits: number;
+  cumulativeGPA: number;
+  degreeConferred?: string;
+  conferredDate?: string;
+  honors?: string;
 }
 
 export interface Student {
@@ -77,6 +121,10 @@ export interface Student {
   fees: Fee[];
   installmentPlans: InstallmentPlan[];
   reportCards: ReportCard[];
+  transcript?: TranscriptData;
+  dob?: string;
+  nationalId?: string;
+  enrollmentDate?: string;
 }
 
 export interface LessonPlan {
@@ -113,6 +161,72 @@ export interface NavItem {
   view: string;
 }
 
+export enum SettingsTab {
+  GENERAL = 'GENERAL',
+  COURSES = 'COURSES',
+  ACADEMIC_YEAR = 'ACADEMIC_YEAR',
+  NOTIFICATIONS = 'NOTIFICATIONS',
+  SECURITY = 'SECURITY',
+  SPACE_MANAGEMENT = 'SPACE_MANAGEMENT'
+}
+
+export interface Course {
+  id: string;
+  code: string;
+  nameEn: string;
+  nameAr: string;
+  gradeLevel?: string;
+  descriptionEn?: string;
+  descriptionAr?: string;
+  credits?: number;
+  department?: string;
+  color?: string;
+}
+
+export interface Holiday {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  date: string;
+  type: 'National' | 'Religious' | 'School';
+}
+
+export interface AcademicYearConfig {
+  id: string;
+  name: string;
+  status: 'Active' | 'Archived' | 'Draft';
+  instructionalDays: string[]; // e.g., ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']
+  termDivision: 'Semesters' | 'Trimesters' | 'Quarters';
+  terms: {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    startDate: string;
+    endDate: string;
+    gracePeriodDays: number;
+    status: 'Active' | 'Locked' | 'Archived' | 'Draft';
+  }[];
+  holidays: Holiday[];
+  schoolEvents: {
+    id: string;
+    nameEn: string;
+    nameAr: string;
+    date: string;
+    type: 'Parent-Teacher' | 'Sports' | 'PD' | 'Other';
+  }[];
+  assignedCourses: string[]; // Course IDs
+}
+
+export interface TimetableEvent {
+  id: string;
+  title: string;
+  date: string;
+  type: 'Lesson' | 'Assessment' | 'Review';
+  subjectId: string;
+  isShifted?: boolean;
+  originalDate?: string;
+}
+
 // --- Curriculum & Content Types ---
 
 export type CurriculumSystem = 'National' | 'IG' | 'IB' | 'American';
@@ -145,11 +259,15 @@ export interface AcademicWeek {
 export interface SubjectNode {
   id: string;
   name: string;
+  code?: string;
+  nameEn?: string;
+  nameAr?: string;
+  department?: string;
   weeks: AcademicWeek[];
   resources: ContentResource[];
   folders: LibraryFolder[];
   lessonPlans: LessonPlan[];
-  assignedTeacherId?: string;
+  assignedTeacherIds?: string[];
 }
 
 export interface GradeLevelNode {
@@ -213,6 +331,67 @@ export interface GradebookConfig {
   entries: GradeEntry[];
 }
 
+// --- Notification Architecture Types ---
+
+export enum NotificationChannel {
+  IN_APP = 'IN_APP',
+  PUSH = 'PUSH',
+  SMS = 'SMS',
+  EMAIL = 'EMAIL'
+}
+
+export enum NotificationCategory {
+  ACADEMIC = 'ACADEMIC',
+  FINANCIAL = 'FINANCIAL',
+  BEHAVIORAL = 'BEHAVIORAL',
+  ADMINISTRATIVE = 'ADMINISTRATIVE'
+}
+
+export interface NotificationTrigger {
+  id: string;
+  nameEn: string;
+  nameAr: string;
+  descriptionEn: string;
+  descriptionAr: string;
+  category: NotificationCategory;
+  enabled: boolean;
+  channels: NotificationChannel[];
+  recipients: UserRole[];
+  aiPurposeEn?: string;
+  aiPurposeAr?: string;
+}
+
+export interface NotificationSettings {
+  channels: {
+    [key in NotificationChannel]: {
+      enabled: boolean;
+      descriptionEn: string;
+      descriptionAr: string;
+    };
+  };
+  categories: {
+    [key in NotificationCategory]: {
+      enabled: boolean;
+      channels: NotificationChannel[];
+      recipients: UserRole[];
+      descriptionEn: string;
+      descriptionAr: string;
+    };
+  };
+  triggers: NotificationTrigger[];
+  quietHours: {
+    enabled: boolean;
+    start: string; // HH:mm
+    end: string;   // HH:mm
+    allowEmergency: boolean;
+  };
+  batching: {
+    enabled: boolean;
+    frequency: 'Daily' | 'Weekly';
+    time: string; // HH:mm
+  };
+}
+
 // --- Class Management & Attendance Types ---
 
 export type AttendanceStatus = 'Present' | 'Absent' | 'Late' | 'Excused' | 'Left Early';
@@ -251,4 +430,33 @@ export interface AttendanceSession {
   status: 'Active' | 'Closed';
   subject: string;
   records: AttendanceRecord[];
+}
+
+// --- Space Management Types ---
+
+export interface SpaceGovernance {
+  enableSocialWall: boolean;
+  parentObserverAccess: boolean;
+  aiContentFiltering: boolean;
+  studentPosting: boolean;
+  privateMessaging: boolean;
+  classDrive: boolean;
+  liveSessionIntegration: boolean;
+  postApprovalMode: boolean;
+  keywordFiltering: boolean;
+  offTopicDetection: boolean;
+  lockWallAfterHours: boolean;
+}
+
+export interface ClassSpace {
+  id: string;
+  sectionId: string;
+  name: string;
+  teacherId: string;
+  coTeachers: string[];
+  status: 'Active' | 'Archived' | 'Maintenance';
+  engagementRate: number;
+  pendingFlags: number;
+  mood: 'Positive' | 'Neutral' | 'Stressed' | 'Excited';
+  settings: SpaceGovernance;
 }

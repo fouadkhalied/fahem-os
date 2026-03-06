@@ -4,16 +4,16 @@ import * as schema from './schema';
 
 // For browser persistence, use idb:// prefix
 // For Node.js persistence, use a file path
-const client = new PGlite('idb://faheem-school-db');
+const client = new PGlite('idb://faheem-school-db-v5');
 
 export const db = drizzle(client, { schema });
 
 // Initialization logic
 export const initDb = async () => {
-    try {
-        console.log("Syncing database schema...");
+	try {
+		console.log("Syncing database schema...");
 
-        const migrationSql = `
+		const migrationSql = `
 -- Enums (using DO blocks to avoid errors if they already exist)
 DO $$ BEGIN CREATE TYPE "public"."curriculum_system" AS ENUM('National', 'IG', 'IB', 'American'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "public"."employment_type" AS ENUM('Full-time', 'Part-time', 'Contract'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -182,10 +182,10 @@ CREATE TABLE IF NOT EXISTS "notification_triggers" (
 
         `;
 
-        await client.exec(migrationSql);
-        console.log("Database schema synced successfully.");
-    } catch (err) {
-        console.error("Database initialization failed:", err);
-    }
+		await client.exec(migrationSql);
+		console.log("Database schema synced successfully.");
+	} catch (err) {
+		console.error("Database initialization failed:", err);
+	}
 };
 

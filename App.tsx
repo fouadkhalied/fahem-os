@@ -9,13 +9,14 @@ import { Curriculum } from './views/Curriculum';
 import { Gradebook } from './views/Gradebook';
 import { ClassManagement } from './views/ClassManagement';
 import { Analytics } from './views/Analytics';
+import { Settings } from './views/Settings';
 import {
   LayoutDashboard,
   BookOpen,
   GraduationCap,
   LibraryBig,
   BarChart3,
-  Settings,
+  Settings as SettingsIcon,
   School,
   Activity,
   Menu,
@@ -28,11 +29,6 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>(Language.EN);
   const [activeView, setActiveView] = useState('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [dbReady, setDbReady] = useState(false);
-
-  useEffect(() => {
-    initDb().then(() => setDbReady(true));
-  }, []);
 
   // Mock User State
   const [user, setUser] = useState<User>({
@@ -41,6 +37,15 @@ const App: React.FC = () => {
     role: UserRole.TEACHER,
     avatar: 'https://i.pravatar.cc/150?u=sarah'
   });
+  const [isDbInitializing, setIsDbInitializing] = useState(true);
+
+  useEffect(() => {
+    const setup = async () => {
+      await initDb();
+      setIsDbInitializing(false);
+    };
+    setup();
+  }, []);
 
   const toggleLanguage = () => {
     setLanguage(prev => prev === Language.AR ? Language.EN : Language.AR);
@@ -64,7 +69,7 @@ const App: React.FC = () => {
     { id: 'users', labelEn: 'Users', labelAr: 'المستخدمين', icon: <Users size={20} />, view: 'users' },
     { id: 'curriculum', labelEn: 'Curriculum', labelAr: 'المنهج الدراسي', icon: <LibraryBig size={20} />, view: 'curriculum' },
     { id: 'analytics', labelEn: 'Analytics', labelAr: 'التحليلات', icon: <BarChart3 size={20} />, view: 'analytics' },
-    { id: 'settings', labelEn: 'Settings', labelAr: 'الإعدادات', icon: <Settings size={20} />, view: 'settings' },
+    { id: 'settings', labelEn: 'Settings', labelAr: 'الإعدادات', icon: <SettingsIcon size={20} />, view: 'settings' },
   ];
 
   const renderContent = () => {
@@ -83,11 +88,13 @@ const App: React.FC = () => {
         return <Gradebook role={user.role} language={language} />;
       case 'analytics':
         return <Analytics role={user.role} language={language} />;
+      case 'settings':
+        return <Settings role={user.role} language={language} />;
       default:
         return (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <span className="text-6xl mb-6 opacity-30">
-              <Settings size={64} />
+              <SettingsIcon size={64} />
             </span>
             <p className="text-xl font-medium">Feature coming soon</p>
           </div>
@@ -95,12 +102,16 @@ const App: React.FC = () => {
     }
   };
 
-  if (!dbReady) {
+  if (isDbInitializing) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-center">
-        <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin mb-6"></div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Initializing System</h1>
-        <p className="text-gray-500 max-w-sm">Setting up your secure local database. This only takes a moment...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#fdfdfd] p-8">
+        <div className="flex flex-col items-center gap-6 text-center max-w-sm">
+          <div className="w-16 h-16 border-4 border-primary-100 border-t-primary-600 rounded-full animate-spin"></div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Initializing School System</h1>
+            <p className="text-gray-500 font-medium tracking-wide">Connecting to local database and syncing records...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -176,8 +187,8 @@ const App: React.FC = () => {
           toggleRole={toggleRole}
         />
 
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto">
-          <div className="max-w-7xl mx-auto h-full">
+        <main className={`flex-1 overflow-y-auto ${activeView === 'settings' ? 'p-0' : 'p-4 md:p-8'}`}>
+          <div className={`${activeView === 'settings' ? 'w-full' : 'max-w-7xl mx-auto'} h-full`}>
             {renderContent()}
           </div>
         </main>

@@ -1,7 +1,17 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { LessonPlan, Holiday, Course, TimetableEvent, Language } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const getApiKey = () => {
+  // Check both VITE_ prefix and process.env (for Vite define fallback)
+  return (import.meta as any).env?.VITE_GEMINI_API_KEY || (process as any).env?.GEMINI_API_KEY || (process as any).env?.API_KEY;
+};
+
+const apiKey = getApiKey();
+if (!apiKey) {
+  console.warn("Gemini API Key is not set. AI features will be disabled.");
+}
+
+const ai = apiKey ? new GoogleGenAI(apiKey) : null;
 
 export const generateSmartTimetable = async (
   startDate: string,
@@ -11,7 +21,7 @@ export const generateSmartTimetable = async (
   language: 'ar' | 'en'
 ): Promise<TimetableEvent[] | null> => {
   const model = "gemini-3-flash-preview";
-  
+
   const prompt = `
     Generate a smart academic timetable from ${startDate} to ${endDate}.
     Holidays: ${JSON.stringify(holidays)}.
@@ -60,7 +70,7 @@ export const analyzeHolidayImpact = async (
   language: 'ar' | 'en'
 ): Promise<{ suggestion: string; shiftedEvents: TimetableEvent[] } | null> => {
   const model = "gemini-3-flash-preview";
-  
+
   const prompt = `
     Analyze the impact of the holiday "${holiday.nameEn}" on ${holiday.date}.
     The following events are impacted: ${JSON.stringify(impactedEvents)}.
@@ -114,7 +124,7 @@ export const predictResourceDemand = async (
   language: 'ar' | 'en'
 ): Promise<{ courseId: string; predictedEnrollment: number; demandLevel: 'High' | 'Medium' | 'Low'; reason: string }[] | null> => {
   const model = "gemini-3-flash-preview";
-  
+
   const prompt = `
     Analyze the following courses and predict enrollment and resource demand based on typical school patterns.
     Courses: ${JSON.stringify(courses)}.
@@ -266,9 +276,8 @@ export const predictIntakeAndSections = async (
 };
 
 export const fetchEgyptianHolidays = async (year: string, language: Language): Promise<Holiday[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
+  if (!ai) return [];
+  const response = await ai.getGenerativeModel({ model: "gemini-3-flash-preview" }).generateContent({
     contents: `List all official national holidays in Egypt for the year ${year}. Return the data in JSON format as an array of Holiday objects with id, nameEn, nameAr, date (YYYY-MM-DD), and type: "National". Language preference: ${language}.`,
     config: {
       responseMimeType: "application/json",
@@ -331,7 +340,7 @@ export const generateLessonPlan = async (
   language: 'ar' | 'en'
 ): Promise<LessonPlan | null> => {
   const model = "gemini-3-flash-preview";
-  
+
   const prompt = `
     Create a detailed lesson plan for a ${grade} class on the subject of ${subject}.
     The specific topic is: "${topic}".

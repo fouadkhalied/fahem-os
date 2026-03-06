@@ -5,11 +5,16 @@ import * as schema from './schema';
 // For browser persistence, use idb:// prefix
 // For Node.js persistence, use a file path
 let client: PGlite;
+const isBrowser = typeof window !== 'undefined' || typeof self !== 'undefined';
+
 try {
-	client = new PGlite('idb://faheem-school-db-v5');
+	if (isBrowser) {
+		client = new PGlite('idb://faheem-school-db-v5');
+	} else {
+		client = new PGlite();
+	}
 } catch (e) {
 	console.error("Failed to initialize PGLite client:", e);
-	// Fallback to in-memory if IndexedDB fails (e.g. Incognito or Node environment)
 	client = new PGlite();
 }
 

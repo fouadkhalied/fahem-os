@@ -38,7 +38,7 @@ export const teachers = pgTable('teachers', {
 // 4. Class Sections Table
 export const classSections = pgTable('class_sections', {
     id: uuid('id').defaultRandom().primaryKey(),
-    name: text('name').notNull(), // e.g., 10-A
+    name: text('name').notNull(),
     gradeLevel: text('grade_level').notNull(),
     curriculumSystem: curriculumSystemEnum('curriculum_system'),
     academicYear: text('academic_year').notNull(),
@@ -104,7 +104,7 @@ export const subjects = pgTable('subjects', {
 export const assessments = pgTable('assessments', {
     id: uuid('id').defaultRandom().primaryKey(),
     title: text('title').notNull(),
-    category: text('category').notNull(), // Assessment type (Homework, Quiz, Exam)
+    category: text('category').notNull(),
     maxScore: numeric('max_score').notNull(),
     assessmentDate: date('assessment_date'),
     termId: uuid('term_id').references(() => academicTerms.id, { onDelete: 'cascade' }),
@@ -130,10 +130,10 @@ export const lessonPlans = pgTable('lesson_plans', {
     gradeLevel: text('grade_level').notNull(),
     subjectId: uuid('subject_id').references(() => subjects.id, { onDelete: 'cascade' }),
     teacherId: uuid('teacher_id').references(() => teachers.id, { onDelete: 'cascade' }),
-    objectives: jsonb('objectives'), // Stored as array
-    materials: jsonb('materials'),   // Stored as array
-    outline: jsonb('outline'),      // Stored as array of {time, activity, description}
-    quiz: jsonb('quiz'),           // Assessment questions
+    objectives: jsonb('objectives'),
+    materials: jsonb('materials'),
+    outline: jsonb('outline'),
+    quiz: jsonb('quiz'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -178,8 +178,47 @@ export const notificationTriggers = pgTable('notification_triggers', {
     nameAr: text('name_ar').notNull(),
     category: notificationCategoryEnum('category').notNull(),
     enabled: boolean('enabled').default(true),
-    channels: jsonb('channels'),     // e.g., ['IN_APP', 'PUSH', 'SMS']
-    recipients: jsonb('recipients'), // e.g., ['STUDENT', 'TEACHER', 'PARENT']
+    channels: jsonb('channels'),
+    recipients: jsonb('recipients'),
     aiPurposeEn: text('ai_purpose_en'),
     aiPurposeAr: text('ai_purpose_ar'),
 });
+
+// ─── Curriculum Builder Tables ────────────────────────────────────────────────
+
+// 17. Curriculum Systems Table
+// One row per school (only one active system at a time)
+export const curriculumSystems = pgTable('curriculum_systems', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    system: curriculumSystemEnum('system').notNull(),
+    academicYear: text('academic_year').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// 18. Grade Levels Table
+// Belongs to a curriculum system (e.g. "Grade 10", "Year 11")
+export const gradeLevels = pgTable('grade_levels', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    curriculumSystemId: uuid('curriculum_system_id')
+        .references(() => curriculumSystems.id, { onDelete: 'cascade' })
+        .notNull(),
+    name: text('name').notNull(),
+    orderIndex: integer('order_index'),
+});
+
+// 19. Subject Teachers Junction Table
+// Many-to-many: which teachers are assigned to which subjects (in curriculum builder)
+export const subjectTeachers = pgTable('subject_teachers', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    subjectId: uuid('subject_id')
+        .references(() => subjects.id, { onDelete: 'cascade' })
+        .notNull(),
+    teacherId: uuid('teacher_id')
+        .references(() => teachers.id, { onDelete: 'cascade' })
+        .notNull(),
+    gradeLevelId: uuid('grade_level_id')
+        .references(() => gradeLevels.id, { onDelete: 'cascade' })
+        .notNull(),
+}, (t) => ({
+    unq: unique().on(t.subjectId, t.teacherId),
+}));

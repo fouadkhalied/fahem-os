@@ -2,8 +2,6 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { PGlite } from '@electric-sql/pglite';
 import * as schema from './schema';
 
-// For browser persistence, use idb:// prefix
-// For Node.js persistence, use a file path
 let client: PGlite;
 const isBrowser = typeof window !== 'undefined' || typeof self !== 'undefined';
 
@@ -20,13 +18,12 @@ try {
 
 export const db = drizzle(client, { schema });
 
-// Initialization logic
 export const initDb = async () => {
 	try {
 		console.log("Syncing database schema...");
 
 		const migrationSql = `
--- Enums (using DO blocks to avoid errors if they already exist)
+-- Enums
 DO $$ BEGIN CREATE TYPE "public"."curriculum_system" AS ENUM('National', 'IG', 'IB', 'American'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "public"."employment_type" AS ENUM('Full-time', 'Part-time', 'Contract'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "public"."role" AS ENUM('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'STUDENT', 'PARENT'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -41,6 +38,7 @@ DO $$ BEGIN CREATE TYPE "public"."attendance_status" AS ENUM('Present', 'Absent'
 DO $$ BEGIN CREATE TYPE "public"."fee_status" AS ENUM('Paid', 'Pending', 'Overdue'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE "public"."notification_category" AS ENUM('ACADEMIC', 'FINANCIAL', 'BEHAVIORAL', 'ADMINISTRATIVE'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
+-- Core tables
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
@@ -192,6 +190,28 @@ CREATE TABLE IF NOT EXISTS "notification_triggers" (
 	"ai_purpose_ar" text
 );
 
+-- Curriculum Builder tables (new)
+CREATE TABLE IF NOT EXISTS "curriculum_systems" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"system" "curriculum_system" NOT NULL,
+	"academic_year" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS "grade_levels" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"curriculum_system_id" uuid NOT NULL REFERENCES "curriculum_systems"("id") ON DELETE cascade,
+	"name" text NOT NULL,
+	"order_index" integer
+);
+
+CREATE TABLE IF NOT EXISTS "subject_teachers" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"subject_id" uuid NOT NULL REFERENCES "subjects"("id") ON DELETE cascade,
+	"teacher_id" uuid NOT NULL REFERENCES "teachers"("id") ON DELETE cascade,
+	"grade_level_id" uuid NOT NULL REFERENCES "grade_levels"("id") ON DELETE cascade,
+	CONSTRAINT "subject_teachers_subject_id_teacher_id_unique" UNIQUE("subject_id","teacher_id")
+);
         `;
 
 		await client.exec(migrationSql);
@@ -200,4 +220,3 @@ CREATE TABLE IF NOT EXISTS "notification_triggers" (
 		console.error("Database initialization failed:", err);
 	}
 };
-

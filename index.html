@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ea580c" />
+    <title>Faheem | Modern School OS</title>
+    <meta name="description" content="AI-Powered School Operating System" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: '#fff7ed',
+                100: '#ffedd5',
+                200: '#fed7aa',
+                300: '#fdba74',
+                400: '#fb923c',
+                500: '#f97316',
+                600: '#ea580c', // Main Accent
+                700: '#c2410c',
+                800: '#9a3412',
+                900: '#7c2d12',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'Cairo', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
+      
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #fdfdfd; /* M3 Surface Tone */
+      }
+      
+      /* Cairo font for Arabic text */
+      [dir="rtl"] body {
+        font-family: 'Cairo', sans-serif;
+      }
+
+      /* Custom Scrollbar - Orange Theme */
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #fdba74; 
+        border-radius: 99px;
+        border: 2px solid #fdfdfd;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ea580c; 
+      }
+
+      .animate-fadeIn {
+        animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0.2, 1) forwards;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* M3 Elevation Utilities */
+      .elevation-1 { box-shadow: 0px 1px 3px 1px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3); }
+      .elevation-2 { box-shadow: 0px 2px 6px 2px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.3); }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react/": "https://esm.sh/react@18.3.1/",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@18.3.1/",
+    "recharts": "https://esm.sh/recharts@2.13.0?external=react,react-dom",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.294.0?external=react"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

@@ -135,16 +135,14 @@ export const dbService = {
 
     // ── Curriculum System ──────────────────────────────────────────────────────
 
-    /** Returns the first (and only) curriculum system row, or null. */
     async getCurriculumSystem() {
         const rows = await db.select().from(curriculumSystems).limit(1);
         return rows[0] ?? null;
     },
 
-    /** Delete any existing system and insert a fresh one with auto-generated grades. */
     async createCurriculumSystem(system: 'National' | 'IG' | 'IB' | 'American', academicYear: string) {
         return await db.transaction(async (tx) => {
-            // Remove old system (cascades to grade_levels → subject_teachers)
+            // Delete old system — cascades to grade_levels → subject_teachers
             await tx.delete(curriculumSystems);
 
             const [newSystem] = await tx
@@ -152,7 +150,6 @@ export const dbService = {
                 .values({ system, academicYear })
                 .returning();
 
-            // Auto-generate grade level rows for the chosen system
             const gradeNames = getGradeNamesForSystem(system);
             if (gradeNames.length > 0) {
                 await tx.insert(gradeLevels).values(
@@ -180,26 +177,20 @@ export const dbService = {
 
     // ── Subjects ───────────────────────────────────────────────────────────────
 
-    /**
-     * Fetch all subjects for a grade level, with assigned teacher IDs joined in.
-     */
     async getSubjectsByGradeLevel(gradeLevelId: string) {
-        // Get subjects that belong to this grade level via grade_levels.name → subjects.grade_level
-        // We store the grade name on the subject row for simplicity (matches existing schema).
-        const gradeRow = await db
+        const [gradeRow] = await db
             .select()
             .from(gradeLevels)
             .where(eq(gradeLevels.id, gradeLevelId))
             .limit(1);
 
-        if (!gradeRow[0]) return [];
+        if (!gradeRow) return [];
 
         const subjectRows = await db
             .select()
             .from(subjects)
-            .where(eq(subjects.gradeLevel, gradeRow[0].name));
+            .where(eq(subjects.gradeLevel, gradeRow.name));
 
-        // For each subject, fetch assigned teacher IDs
         const enriched = await Promise.all(
             subjectRows.map(async (s) => {
                 const teacherRows = await db
@@ -207,10 +198,7 @@ export const dbService = {
                     .from(subjectTeachers)
                     .where(eq(subjectTeachers.subjectId, s.id));
 
-                return {
-                    ...s,
-                    assignedTeacherIds: teacherRows.map(t => t.teacherId),
-                };
+                return { ...s, assignedTeacherIds: teacherRows.map(t => t.teacherId) };
             })
         );
 
@@ -238,6 +226,7 @@ export const dbService = {
     // ── Subject–Teacher assignments ────────────────────────────────────────────
 
     async assignTeacherToSubject(subjectId: string, teacherId: string, gradeLevelId: string) {
+        // Insert only the three columns that actually exist in the table
         await db
             .insert(subjectTeachers)
             .values({ subjectId, teacherId, gradeLevelId })

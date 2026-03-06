@@ -1,0 +1,8 @@
+{
+    "version": 2,
+    "functions": {
+        "api/hello.ts": {
+            "runtime": "@vercel/node"
+        }
+    }
+}
